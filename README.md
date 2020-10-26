@@ -26,4 +26,4 @@ which we are treating as simple key-value-pairs:
 	5. database_password
 	6. database_all_user - User with "ALL" privileges on database
 	7. database_select_user -- User with only "SELECT" privileges on database
-5. Data dictionary file name (_dataDictfile__)
+5. Data dictionary file name (__dataDictfile__)
