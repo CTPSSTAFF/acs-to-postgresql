@@ -1,7 +1,7 @@
 # This is a script to download one year's worth of data from the ACS,
 # and move it into a PostgreSQL database. 
 #
-# Assumption: The structure and schema etc will already been in place.
+# Assumption: The structure and schema etc. of the database is already in place.
 #
 # *** TBD: Write SQL to generate DB tables with appropriate schema.
 #
@@ -9,8 +9,17 @@
 # 10/15/2019
 #
 # Revised (genericized) by Ben Krepp (bkrepp@ctps.org) 
-# This is currently a work-in-progress.
 # October, 2020
+#
+# This is currently a work-in-progress.
+#
+# Required packages:
+# - RPostgres
+# - readxl
+# - dplyr
+# - sqldf
+# - stringr
+# - hash
 
 
 # *** BEGIN: Variables to be set by user ***
@@ -40,32 +49,46 @@
 #
 # 5. Data dictionary file name
 
+# Install package that allows connection between R and PostgreSQL
+install.packages("RPostgres")
+install.packages("readxl")
+install.packages("dplyr")
+install.packages("sqldf")
+install.packages("stringr")
+install.packages("hash")
+
+library(RPostgres)
+library(readxl)
+library(dplyr)
+library(sqldf)
+library(stringr)
+library(hash)
+
+# *** Variables to be set by the user. ***
+
 # Directories
 #
-directories <- c(working_dir <- "M/CensusTest",
-                 tracts_bgs_subfolder_name <- "TBG")
+directories <- hash(c("working_dir", "tracts_bgs_subfolder_name"),
+                    c("M/CensusTest", "TBG"))
 
 # FTP download URLs
 #
-urls <- c(non_tracts_bgs_download_url <- "https://www2.census.gov/programs-surveys/acs/summary_file/2018/data/5_year_by_state/Massachusetts_All_Geographies_Not_Tracts_Block_Groups.zip",
-          tracts_bgs_download_url <- "https://www2.census.gov/programs-surveys/acs/summary_file/2018/data/5_year_by_state/Massachusetts_Tracts_Block_Groups_Only.zip",
-		  templates_url <- "https://www2.census.gov/programs-surveys/acs/summary_file/2018/data/2018_5yr_Summary_FileTemplates.zip")
+urls <- hash(c("non_tracts_bgs_download_url", "tracts_bgs_download_url", "templates_url"),
+             c("https://www2.census.gov/programs-surveys/acs/summary_file/2018/data/5_year_by_state/Massachusetts_All_Geographies_Not_Tracts_Block_Groups.zip",
+               "https://www2.census.gov/programs-surveys/acs/summary_file/2018/data/5_year_by_state/Massachusetts_Tracts_Block_Groups_Only.zip",
+		       "https://www2.census.gov/programs-surveys/acs/summary_file/2018/data/2018_5yr_Summary_FileTemplates.zip"))
 
 # Zip file names
 #
-zip_filenames <- c(non_tracts_bgs_zip_filename <- "MA_2018_ACS_5YR_AG.zip",
-                   tracts_bgs_zip_filename <- "MA_2018_ACS_5YR_TBG.zip",
-				   templates_zip_filename <- "MA_2018_ACS_5YR_Templates.zip")
+zip_filenames <- hash(c("non_tracts_bgs_zip_filename", "tracts_bgs_zip_filename", "templates_zip_filename"),
+                      c("MA_2018_ACS_5YR_AG.zip", "MA_2018_ACS_5YR_TBG.zip", "MA_2018_ACS_5YR_Templates.zip"))
 
 # PostgreSQL database connection parameters and user names
 #
-postgres_info <- c(database_name <- "MY_DATABASE_NAME",
-                   database_host <- "foo.bar.org",
-				   database_port <- "5432", # Default PostgreSQL port
-				   database_username <- "MY_DATABASE_USERNAME",
-				   database_password <- "MY_DATABASE_PASSWORD",
-				   database_all_user <- "MY_ALL_PRIVS_USERNAME",
-				   database_select_user <- "MY_SELECT_ONLY_USERNAME")
+postgres_info <- hash(c("atabase_name", "database_host", "database_port", "database_username", 	
+                        "database_password", "database_all_user", "database_select_user"),
+                      c("MY_DATABASE_NAME", "foo.bar.org", "5432", "MY_DATABASE_USERNAME", 
+					    "MY_DATABASE_PASSWORD", "MY_ALL_PRIVS_USERNAME", "MY_SELECT_ONLY_USERNAME"))
 
 # Data dictionary file name
 #
@@ -73,18 +96,7 @@ dataDictfile <- "M:/CensusDownloading/ACS_5yr_Seq_Table_Number_Lookup.xlsx"
 
 # *** END of variables to be set by the user. ***
 
-# Install package that allows connection between R and PostgreSQL
-install.packages("RPostgres")
-install.packages("readxl")
-install.packages("dplyr")
-install.packages("sqldf")
-install.packages("stringr")
 
-library(RPostgres)
-library(readxl)
-library(dplyr)
-library(sqldf)
-library(stringr)
 
 #
 # *** MAIN BODY OF CODE BEGINS HERE ***
@@ -93,10 +105,10 @@ library(stringr)
 setwd(directories['working_dir'])
 
 # Download the zip file via ftp for non-tract and blockgroup geometries
-download.file(urls['non_tracts_bgs_download_url'], zip_filenames['non_tracts_bgs_zip_filename']) #don't need to loop should be 1 file
+download.file($non_tracts_bgs_download_url, zip_filenames$non_tracts_bgs_zip_filename) #don't need to loop should be 1 file
 
 # Download the zip file for tracts & block groups geometries
-download.file(urls['tracts_bgs_download_url'],zip_filenames['tracts_bgs_zip_filename'])
+download.file(urls$tracts_bgs_download_url,zip_filenames$tracts_bgs_zip_filename)
 
 # Load data dictionary
 dataDict <- read_excel(dataDictfile)
@@ -128,8 +140,8 @@ for (tabl in tableVector) {
 }
 
 # Ssave the zip file title (?? - title --> name)
-zipFile  <- zip_filenames['non_tracts_bgs_zip_filename']
-zipFile2 <- zip_filenames['tracts_bgs_zip_filename']
+zipFile  <- zip_filenames$non_tracts_bgs_zip_filename
+zipFile2 <- zip_filenames$tracts_bgs_zip_filename
 
 # Get the file names
 zippedNames <- unzip(zipFile,list = TRUE)
@@ -161,12 +173,12 @@ for (tabl in tableSeqList){
 unzip(zipFile, seqNames) 
 
 # Load tracts & block groups into a different folder to not overwrite other files
-unzip(zipFile2, seqNames, exdir = directories['tracts_bgs_subfolder_name'])
+unzip(zipFile2, seqNames, exdir = directories$tracts_bgs_subfolder_name)
 
 # Make a list of file names
 filez <- list.files(path=working_dir, pattern="*.txt", full.names=FALSE, recursive=FALSE)
 # or maybe just take the list of table names and make a list
-tbg_fullpath <- paste(working_dir, "/", directories['tracts_bgs_subfolder_name'])
+tbg_fullpath <- paste(working_dir, "/", directories$tracts_bgs_subfolder_name)
 filez2 <- list.files(path=tbg_fullpath,pattern="*.txt",full.names=FALSE,recursive=FALSE)
 
 mergedfilez <- list()
@@ -191,8 +203,8 @@ for (z in filez){
 }
 
 # Load templates - download the zip file via ftp
-download.file(urls['templates_url'], zip_filenames['templates_zip_filename']) #don't need to loop should be 1 file
-zipFile2 <- zip_filenames['templates_zip_filename']
+download.file(urls$templates_url, zip_filenames$templates_zip_filename) #don't need to loop should be 1 file
+zipFile2 <- zip_filenames$templates_zip_filename
 
 # Only grab the template file names for templates we need
 templateNames <- c()
@@ -337,34 +349,34 @@ for (table in names(dataFrames)){
 # *** TBD: Write SQL to generate DB tables with appropriate schema.
 #
 con <- dbConnect(RPostgres::Postgres(), 
-                 dbname = postgres_info['database_name'], 
-                 host = postgres_info['database_host'], 
-				 port = postgres_info['database_port'],
-                 password = postgres_info['database_password'], 
-				 user = postgres_info['database_username'])
+                 dbname = postgres_info$database_name, 
+                 host = postgres_info$database_host, 
+				 port = postgres_info$database_port,
+                 password = postgres_info$database_password, 
+				 user = postgres_info$database_username)
 
 #write dataframe as table into the database
 #dbWriteTable(con, "newtable", dataDF)
 #transfer data to the PostgreSQL database
 
 # if the connection to the database is valid, set as database
-if (postgresHasDefault(dbname = postgres_info['database_name'], 
-                       host = postgres_info['database_host'], 
-					   port = postgres_info['database_port'],
-                       password = postgres_info['database_password'], 
-					   user = postgres_info['database_username'])) {
-  db <- postgresDefault(dbname = postgres_info['database_name'], 
-                        host = postgres_info['database_host'], 
-						port = postgres_info['database_port'],
-                        password = postgres_info['database_password'], 
-						user = postgres_info['database_username'])
+if (postgresHasDefault(dbname = postgres_info$database_name, 
+                       host = postgres_info$database_host, 
+					   port = postgres_info$database_port,
+                       password = postgres_info$database_password, 
+					   user = postgres_info$database_username)) {
+  db <- postgresDefault(dbname = postgres_info$database_name, 
+                        host = postgres_info$database_host, 
+						port = postgres_info$database_port,
+                        password = postgres_info$database_password, 
+						user = postgres_info$database_username)
   
   # Write dataframe as table into the database
   for (table in names(newTabList)){
     dbWriteTable(con, table, newTabList[[table]])
     # Set permissions per table
-    query <- paste('GRANT ALL ON TABLE ', table,' TO "', postgres_info['database_all_user'], '";')
-    query2 <- paste('GRANT SELECT ON TABLE ', table,' TO "', postgres_info['database_select_user'], '";')
+    query <- paste('GRANT ALL ON TABLE ', table,' TO "', postgres_info$database_all_user, '";')
+    query2 <- paste('GRANT SELECT ON TABLE ', table,' TO "', postgres_info$database_select_user, '";')
     dbSendQuery(con, query)
     dbSendQuery(con, query2)
   }
@@ -375,11 +387,11 @@ if (postgresHasDefault(dbname = postgres_info['database_name'],
 
 # For testing purposes only
 #
-db <- postgresDefault(dbname = postgres_info['database_name'], 
-                      host = postgres_info['database_host'], 
-					  port = postgres_info['database_port'],
-                      password = postgres_info['database_password'], 
-					  user = postgres_info['database_username'])
+db <- postgresDefault(dbname = postgres_info$database_name, 
+                      host = postgres_info$database_host, 
+					  port = postgres_info$database_port,
+                      password = postgres_info$database_password, 
+					  user = postgres_info$database_username)
 
 for (table in names(newTabList)){
   print(table)
