@@ -47,25 +47,25 @@ directories <- c(working_dir <- "M/CensusTest",
 
 # FTP download URLs
 #
-urls <- c(non_tracts_bgs_download_url = "https://www2.census.gov/programs-surveys/acs/summary_file/2018/data/5_year_by_state/Massachusetts_All_Geographies_Not_Tracts_Block_Groups.zip",
-          tracts_bgs_download_url = "https://www2.census.gov/programs-surveys/acs/summary_file/2018/data/5_year_by_state/Massachusetts_Tracts_Block_Groups_Only.zip",
-		  templates_url = "https://www2.census.gov/programs-surveys/acs/summary_file/2018/data/2018_5yr_Summary_FileTemplates.zip")
+urls <- c(non_tracts_bgs_download_url <- "https://www2.census.gov/programs-surveys/acs/summary_file/2018/data/5_year_by_state/Massachusetts_All_Geographies_Not_Tracts_Block_Groups.zip",
+          tracts_bgs_download_url <- "https://www2.census.gov/programs-surveys/acs/summary_file/2018/data/5_year_by_state/Massachusetts_Tracts_Block_Groups_Only.zip",
+		  templates_url <- "https://www2.census.gov/programs-surveys/acs/summary_file/2018/data/2018_5yr_Summary_FileTemplates.zip")
 
 # Zip file names
 #
-zip_filenames <- c(non_tracts_bgs_zip_filename = "MA_2018_ACS_5YR_AG.zip",
-                   tracts_bgs_zip_filename = "MA_2018_ACS_5YR_TBG.zip",
-				   templates_zip_filename = "MA_2018_ACS_5YR_Templates.zip")
+zip_filenames <- c(non_tracts_bgs_zip_filename <- "MA_2018_ACS_5YR_AG.zip",
+                   tracts_bgs_zip_filename <- "MA_2018_ACS_5YR_TBG.zip",
+				   templates_zip_filename <- "MA_2018_ACS_5YR_Templates.zip")
 
 # PostgreSQL database connection parameters and user names
 #
-postgres_info <- c(database_name = "MY_DATABASE_NAME",
-                   database_host = "foo.bar.org",
-				   database_port = "5432", # Default PostgreSQL port
-				   database_username = "MY_DATABASE_USERNAME",
-				   database_password = "MY_DATABASE_PASSWORD",
-				   database_all_user = "MY_ALL_PRIVS_USERNAME",
-				   database_select_user = "MY_SELECT_ONLY_USERNAME")
+postgres_info <- c(database_name <- "MY_DATABASE_NAME",
+                   database_host <- "foo.bar.org",
+				   database_port <- "5432", # Default PostgreSQL port
+				   database_username <- "MY_DATABASE_USERNAME",
+				   database_password <- "MY_DATABASE_PASSWORD",
+				   database_all_user <- "MY_ALL_PRIVS_USERNAME",
+				   database_select_user <- "MY_SELECT_ONLY_USERNAME")
 
 # Data dictionary file name
 #
