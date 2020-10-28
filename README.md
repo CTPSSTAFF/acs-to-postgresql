@@ -14,7 +14,7 @@ This script requires the following R packages:
 * hash
 
 Variables whose values are to be "plugged in" by the user have been collected into 
-four "hashes" (key-value pairs)and one "vanilla" variable:
+four "hashes" (key-value pairs) and one string variable:
 
 1. Directories: (__dirs__)
 	1. working_dir
