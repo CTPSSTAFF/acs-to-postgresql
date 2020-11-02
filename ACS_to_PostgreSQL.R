@@ -49,6 +49,7 @@
 #
 # 5. Data dictionary file name
 
+
 # Install package that allows connection between R and PostgreSQL
 install.packages("RPostgres")
 install.packages("readxl")
@@ -69,7 +70,7 @@ library(hash)
 # Directories
 #
 directories <- hash(c("working_dir", "tracts_bgs_subfolder_name"),
-                    c("M/CensusTest", "TBG"))
+                    c("M:/CensusTest", "TBG"))
 
 # FTP download URLs
 #
@@ -85,7 +86,7 @@ zip_filenames <- hash(c("non_tracts_bgs_zip_filename", "tracts_bgs_zip_filename"
 
 # PostgreSQL database connection parameters and user names
 #
-postgres_info <- hash(c("atabase_name", "database_host", "database_port", "database_username", 	
+postgres_info <- hash(c("database_name", "database_host", "database_port", "database_username", 	
                         "database_password", "database_all_user", "database_select_user"),
                       c("MY_DATABASE_NAME", "foo.bar.org", "5432", "MY_DATABASE_USERNAME", 
 					    "MY_DATABASE_PASSWORD", "MY_ALL_PRIVS_USERNAME", "MY_SELECT_ONLY_USERNAME"))
@@ -102,10 +103,10 @@ dataDictfile <- "M:/CensusDownloading/ACS_5yr_Seq_Table_Number_Lookup.xlsx"
 # *** MAIN BODY OF CODE BEGINS HERE ***
 #
 
-setwd(directories['working_dir'])
+setwd(directories$working_dir)
 
 # Download the zip file via ftp for non-tract and blockgroup geometries
-download.file($non_tracts_bgs_download_url, zip_filenames$non_tracts_bgs_zip_filename) #don't need to loop should be 1 file
+download.file(urls$non_tracts_bgs_download_url, zip_filenames$non_tracts_bgs_zip_filename) #don't need to loop should be 1 file
 
 # Download the zip file for tracts & block groups geometries
 download.file(urls$tracts_bgs_download_url,zip_filenames$tracts_bgs_zip_filename)
@@ -149,7 +150,9 @@ zippedNames <- unzip(zipFile,list = TRUE)
 files <- zippedNames[,1]
 
 # Initialize the check
-# *** TBD: What are we checking for???? Document this.
+# Given that multiple tables may be in the same sequence table,
+#   this check is to make sure we don't add a sequence table twice
+#   to our list of files to unzip.
 check <- '0'
 
 seqNames <- c()
@@ -176,9 +179,9 @@ unzip(zipFile, seqNames)
 unzip(zipFile2, seqNames, exdir = directories$tracts_bgs_subfolder_name)
 
 # Make a list of file names
-filez <- list.files(path=working_dir, pattern="*.txt", full.names=FALSE, recursive=FALSE)
+filez <- list.files(path=directories$working_dir, pattern="*.txt", full.names=FALSE, recursive=FALSE)
 # or maybe just take the list of table names and make a list
-tbg_fullpath <- paste(working_dir, "/", directories$tracts_bgs_subfolder_name)
+tbg_fullpath <- paste0(directories$working_dir, "/", directories$tracts_bgs_subfolder_name)
 filez2 <- list.files(path=tbg_fullpath,pattern="*.txt",full.names=FALSE,recursive=FALSE)
 
 mergedfilez <- list()
@@ -187,7 +190,7 @@ mergedfilez <- list()
 for (z in filez){
   for (z2 in filez2){
     if (z == z2){
-      z2_path <- paste(tbg_fullpath, z2, sep="")
+      z2_path <- paste(tbg_fullpath, z2, sep="/")
       dataTable <- read.table(z, sep = ",", na.strings = '.',
                               colClasses = c(V2 = 'character', V4 = 'character', V5 = 'character'))
       dataTable2 <- read.table(z2_path, sep = ",", na.strings = '.',
